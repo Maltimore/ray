@@ -107,7 +107,7 @@ CoreWorker::CoreWorker(const WorkerType worker_type, const Language language,
     auto execute_task = std::bind(&CoreWorker::ExecuteTask, this, std::placeholders::_1,
                                   std::placeholders::_2, std::placeholders::_3);
     raylet_task_receiver_ = std::unique_ptr<CoreWorkerRayletTaskReceiver>(
-        new CoreWorkerRayletTaskReceiver(raylet_client_, execute_task, exit_handler));
+        new CoreWorkerRayletTaskReceiver(worker_context_.GetWorkerID(), raylet_client_, execute_task, exit_handler));
     direct_task_receiver_ =
         std::unique_ptr<CoreWorkerDirectTaskReceiver>(new CoreWorkerDirectTaskReceiver(
             worker_context_, task_execution_service_, execute_task, exit_handler));
@@ -140,6 +140,8 @@ CoreWorker::CoreWorker(const WorkerType worker_type, const Language language,
   rpc_address_.set_ip_address(node_ip_address);
   rpc_address_.set_port(core_worker_server_.GetPort());
   rpc_address_.set_raylet_id(raylet_id.Binary());
+
+  RAY_LOG(INFO) << "Worker started; id: " << worker_context_.GetWorkerID() << ", port: " << core_worker_server_.GetPort();
 
   // Set timer to periodically send heartbeats containing active object IDs to the raylet.
   // If the heartbeat timeout is < 0, the heartbeats are disabled.

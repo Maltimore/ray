@@ -1093,6 +1093,7 @@ void NodeManager::ProcessDisconnectClientMessage(
   if (worker) {
     // The client is a worker.
     is_worker = true;
+    RAY_LOG(INFO) << "Disconnect from worker: " << worker->WorkerId();
   } else {
     worker = worker_pool_.GetRegisteredDriver(client);
     if (worker) {
@@ -2060,7 +2061,7 @@ void NodeManager::AssignTask(const std::shared_ptr<Worker> &worker, const Task &
         << spec.TaskId() << " has: " << spec.ActorCounter();
   }
 
-  RAY_LOG(DEBUG) << "Assigning task " << spec.TaskId() << " to worker with pid "
+  RAY_LOG(INFO) << "Assigning task: " << spec.DebugString() << " to worker with pid "
                  << worker->Pid();
   flatbuffers::FlatBufferBuilder fbb;
 
@@ -2089,8 +2090,8 @@ void NodeManager::AssignTask(const std::shared_ptr<Worker> &worker, const Task &
     ResourceIdSet resource_id_set =
         worker->GetTaskResourceIds().Plus(worker->GetLifetimeResourceIds());
     if (worker->AssignTask(task, resource_id_set).ok()) {
-      RAY_LOG(DEBUG) << "Assigned task " << task_id << " to worker "
-                     << worker->WorkerId();
+      RAY_LOG(INFO) << "Assigned task " << task_id << " to worker "
+                     << worker->Pid();
       post_assign_callbacks->push_back([this, worker, task_id]() {
         FinishAssignTask(worker, task_id, /*success=*/true);
       });
@@ -2688,6 +2689,7 @@ void NodeManager::FinishAssignTask(const std::shared_ptr<Worker> &worker,
     // assigned to a worker once one becomes available.
     // (See design_docs/task_states.rst for the state transition diagram.)
     local_queues_.QueueTasks({assigned_task}, TaskState::READY);
+    RAY_LOG(INFO) << "DispatchTasks() from FinishAssignTask";
     DispatchTasks(MakeTasksByClass({assigned_task}));
   }
 }
